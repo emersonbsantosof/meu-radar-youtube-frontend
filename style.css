@@ -1,0 +1,48 @@
+﻿/* Estilos para a tabela de vídeos */
+.video-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.video-table th, .video-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.video-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.video-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.video-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.video-thumbnail {
+    width: 100px; /* Tamanho fixo para a miniatura */
+    height: auto;
+    display: block;
+    border-radius: 3px;
+}
+
+.watch-button {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #c4302b; /* Cor do YouTube */
+    color: white;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+}
+
+.watch-button:hover {
+    background-color: #a32724;
+}
