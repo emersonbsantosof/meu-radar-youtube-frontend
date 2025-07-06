@@ -5,25 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Radar de Conteúdo YouTube</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
         <h1>Meu Radar de Conteúdo YouTube</h1>
+        <div class="search-bar">
+            <input type="text" id="search-input" placeholder="Pesquisar vídeos...">
+            <button id="search-button">Buscar</button>
+        </div>
     </header>
 
     <main>
         <section id="radar-section">
             <h2>Vídeos em Destaque</h2>
             <p>Seu radar de conteúdo e análises detalhadas aparecerão aqui.</p>
-            <div id="radar-chart">
+            <div id="chart-container">
                 </div>
         </section>
 
         <section id="video-list-section">
             <h2>Lista de Vídeos</h2>
-            <div id="video-list">
-                </div>
+            <ul id="video-list">
+                </ul>
         </section>
     </main>
 
