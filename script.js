@@ -1,100 +1,105 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
-    console.log('Script JavaScript do Radar carregado!');
+﻿const BACKEND_URL = 'https://radar-youtube-backend.onrender.com';
 
-    const searchTermInput = document.getElementById('searchTermInput');
-    const searchButton = document.getElementById('searchButton');
-    const statusMessage = document.getElementById('statusMessage');
-    const radarChartDiv = document.getElementById('radar-chart');
-    const videoListDiv = document.getElementById('video-list');
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const searchButton = document.getElementById('search-button');
+    const videoList = document.getElementById('video-list');
+    const chartContainer = document.getElementById('chart-container');
 
-    // --- ENDPOINT DO SEU BACKEND ---
-    // IMPORTANTE: Enquanto o backend estiver rodando LOCALMENTE, use http://localhost:5000
-    // Quando você hospedar o backend online, precisará mudar este URL para o URL público do seu backend.
-    const BACKEND_URL = 'https://radar-youtube-backend.onrender.com';
+    // Função para buscar vídeos e atualizar a interface
+    async function fetchVideos(query) {
+        if (!query) return;
 
-    // Função para buscar vídeos do backend
-    async function fetchVideos(searchTerm = '') {
-        statusMessage.textContent = `Buscando vídeos sobre "${searchTerm || 'em alta'}"...`;
-        radarChartDiv.innerHTML = '<p>Carregando dados do radar...</p>';
-        videoListDiv.innerHTML = '<p>Carregando lista de vídeos...</p>';
-
-        let url = `${BACKEND_URL}/trending_videos`; // Endpoint padrão para vídeos em alta
-
-        if (searchTerm) {
-            url = `${BACKEND_URL}/trending_videos?q=${encodeURIComponent(searchTerm)}`; // Adiciona termo de busca
-        }
+        videoList.innerHTML = '<li>Carregando vídeos...</li>';
+        chartContainer.innerHTML = ''; // Limpa o gráfico anterior
 
         try {
-            const response = await fetch(url);
+            const response = await fetch(`${BACKEND_URL}/search?query=${encodeURIComponent(query)}`);
             if (!response.ok) {
-                throw new Error(`Erro HTTP: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
-            const videos = await response.json();
-            
-            statusMessage.textContent = `Busca por "${searchTerm || 'em alta'}" concluída. ${videos.length} vídeos encontrados.`;
-            statusMessage.style.color = '#555'; // Volta a cor para o padrão
+            const data = await response.json();
 
-            displayVideos(videos); // Chama a função para exibir os vídeos
-            drawRadarChart(videos); // Chama a função para desenhar o radar (ainda vamos implementar)
+            videoList.innerHTML = '';
+            if (data.videos && data.videos.length > 0) {
+                data.videos.forEach(video => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <img src="${video.thumbnail}" alt="${video.title}" width="120">
+                        <div>
+                            <h3>${video.title}</h3>
+                            <p>Canal: ${video.channel}</p>
+                            <p>Views: ${video.views ? video.views.toLocaleString() : 'N/A'}</p>
+                            <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank">Assistir</a>
+                        </div>
+                    `;
+                    videoList.appendChild(li);
+                });
+            } else {
+                videoList.innerHTML = '<li>Nenhum vídeo encontrado.</li>';
+            }
+
+            // Atualiza o gráfico de tendências de views
+            if (data.trends && data.trends.length > 0) {
+                updateChart(data.trends);
+            }
 
         } catch (error) {
-            console.error('Erro ao buscar vídeos do backend:', error);
-            statusMessage.textContent = `Erro ao buscar vídeos: ${error.message}. Verifique se o backend está rodando.`;
-            statusMessage.style.color = 'red';
-            radarChartDiv.innerHTML = '<p style="color: red;">Não foi possível carregar o gráfico do radar.</p>';
-            videoListDiv.innerHTML = '<p style="color: red;">Não foi possível carregar a lista de vídeos.</p>';
+            console.error('Erro ao buscar vídeos:', error);
+            videoList.innerHTML = `<li>Erro ao carregar vídeos: ${error.message}. Verifique o console.</li>`;
+            chartContainer.innerHTML = 'Erro ao gerar gráfico.';
         }
     }
 
-    // Função para exibir os vídeos na lista
-    function displayVideos(videos) {
-        if (videos.length === 0) {
-            videoListDiv.innerHTML = '<p>Nenhum vídeo encontrado para o termo de busca.</p>';
-            return;
-        }
+    // Função para atualizar o gráfico (exemplo simples com Chart.js ou outro)
+    function updateChart(trends) {
+        chartContainer.innerHTML = '<h3>Tendências de Views</h3><canvas id="viewChart"></canvas>';
+        const ctx = document.getElementById('viewChart').getContext('2d');
 
-        let html = '<h3>Vídeos Encontrados:</h3>';
-        html += '<table class="video-table">';
-        html += '<thead><tr><th>Miniatura</th><th>Título</th><th>Canal</th><th>Visualizações</th><th>Engajamento</th><th>Ação</th></tr></thead>';
-        html += '<tbody>';
+        const labels = trends.map(t => t.title);
+        const data = trends.map(t => t.views);
 
-        videos.forEach(video => {
-            html += `
-                <tr>
-                    <td><img src="${video.thumbnailUrl}" alt="${video.title}" class="video-thumbnail"></td>
-                    <td>${video.title}</td>
-                    <td>${video.channelName}</td>
-                    <td>${video.viewCountFormatted}</td>
-                    <td>${video.engagementScore}</td>
-                    <td><a href="${video.videoUrl}" target="_blank" class="watch-button">Assistir</a></td>
-                </tr>
-            `;
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Número de Views',
+                    data: data,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
         });
-
-        html += '</tbody></table>';
-        videoListDiv.innerHTML = html;
     }
 
-    // Função para desenhar o gráfico do radar (placeholder por enquanto)
-    function drawRadarChart(videos) {
-        if (videos.length === 0) {
-            radarChartDiv.innerHTML = '<p>Não há dados para desenhar o gráfico do radar.</p>';
-            return;
-        }
-        radarChartDiv.innerHTML = '<p>O gráfico do radar será desenhado aqui com D3.js em breve!</p>';
-        radarChartDiv.style.backgroundColor = '#dff0d8';
-        radarChartDiv.style.color = '#3c763d';
-        // Aqui virá o código D3.js real para desenhar o radar
+    // Adiciona evento de clique ao botão de busca
+    if (searchButton) {
+        searchButton.addEventListener('click', () => {
+            fetchVideos(searchInput.value);
+        });
     }
 
+    // Adiciona evento de tecla 'Enter' ao campo de busca
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                fetchVideos(searchInput.value);
+            }
+        });
+    }
 
-    // Event Listener para o botão de busca
-    searchButton.addEventListener('click', () => {
-        const searchTerm = searchTermInput.value.trim();
-        fetchVideos(searchTerm); // Chama a função de busca
-    });
-
-    // Mensagem inicial e busca inicial de vídeos em alta ao carregar a página
-    statusMessage.textContent = 'Carregando vídeos em alta...';
-    fetchVideos(); // Busca vídeos em alta assim que a página carrega
+    // Carrega vídeos em destaque (opcional, pode ser uma pesquisa inicial ou vazia)
+    fetchVideos('Inteligência Artificial'); // Pesquisa inicial ao carregar a página
 });
